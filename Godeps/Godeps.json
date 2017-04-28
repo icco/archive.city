@@ -1,0 +1,67 @@
+{
+	"ImportPath": "github.com/icco/archive.city",
+	"GoVersion": "go1.8",
+	"GodepVersion": "v79",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/gobs/args",
+			"Rev": "894f93f27f266d3763a9df50b455297a2ef7544a"
+		},
+		{
+			"ImportPath": "github.com/gobs/httpclient",
+			"Rev": "ec774126a2f6b14fc0f23a9f919854b8c9df5786"
+		},
+		{
+			"ImportPath": "github.com/gobs/pretty",
+			"Rev": "7a95ea67e11f8cdb7b3ddb6cefdb571e5067e1be"
+		},
+		{
+			"ImportPath": "github.com/gobs/simplejson",
+			"Rev": "42ff1e40f855e77066ef3f717e616fef0240ec51"
+		},
+		{
+			"ImportPath": "github.com/gorilla/websocket",
+			"Comment": "v1.1.0-24-g3f3e394da2b8",
+			"Rev": "3f3e394da2b801fbe732a935ef40724762a67a07"
+		},
+		{
+			"ImportPath": "github.com/gxed/GoEndian",
+			"Rev": "0f5c6873267e5abf306ffcdfcfa4bf77517ef4a7"
+		},
+		{
+			"ImportPath": "github.com/gxed/eventfd",
+			"Rev": "80a92cca79a8041496ccc9dd773fcb52a57ec6f9"
+		},
+		{
+			"ImportPath": "github.com/ipfs/go-log",
+			"Rev": "48d644b006ba26f1793bffc46396e981801078e3"
+		},
+		{
+			"ImportPath": "github.com/jbenet/go-reuseport",
+			"Rev": "dda7388ef3b7f2c95e80fbc8d0206cc5acb8b90b"
+		},
+		{
+			"ImportPath": "github.com/jbenet/go-reuseport/poll",
+			"Rev": "dda7388ef3b7f2c95e80fbc8d0206cc5acb8b90b"
+		},
+		{
+			"ImportPath": "github.com/jbenet/go-reuseport/singlepoll",
+			"Rev": "dda7388ef3b7f2c95e80fbc8d0206cc5acb8b90b"
+		},
+		{
+			"ImportPath": "github.com/jbenet/go-sockaddr/net",
+			"Rev": "2e7ea655c10e4d4d73365f0f073b81b39cb08ee1"
+		},
+		{
+			"ImportPath": "github.com/raff/godet",
+			"Rev": "5a85277ab5a0c6173f5b14bba9d2fb9aaad49f12"
+		},
+		{
+			"ImportPath": "github.com/whyrusleeping/go-logging",
+			"Rev": "0a5b4a6decf577ce8293eca85ec733d7ab92d742"
+		}
+	]
+}
