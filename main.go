@@ -59,13 +59,7 @@ func main() {
 	}
 
 	if chromeapp != "" {
-		if chromeapp == "headless_shell" {
-			chromeapp += " --no-sandbox"
-		} else {
-			chromeapp += " --headless"
-		}
-
-		chromeapp += " --remote-debugging-port=9222 --disable-extensions --disable-gpu about:blank"
+		chromeapp += " --remote-debugging-port=9222 --disable-extensions --disable-gpu --window-size=1440,900 --headless about:blank"
 	}
 
 	cmd := flag.String("cmd", chromeapp, "command to execute to start the browser")
@@ -74,6 +68,7 @@ func main() {
 	flag.Parse()
 
 	if *cmd != "" {
+		log.Println(*cmd)
 		if err := runCommand(*cmd); err != nil {
 			log.Println("cannot start browser", err)
 		}
@@ -144,22 +139,25 @@ func main() {
 		fmt.Println("LOG", entry["type"], entry["level"], entry["text"])
 	})
 
-	// enable event processing
-	remote.RuntimeEvents(true)
-	remote.NetworkEvents(true)
-	remote.PageEvents(true)
-	remote.DOMEvents(true)
-	remote.LogEvents(true)
-
 	// navigate in existing tab
-	tabs, _ := remote.TabList("")
-	_ = remote.ActivateTab(tabs[0])
+	tabs, err := remote.TabList("")
+	if err != nil {
+		log.Println("error getting tabs: ", err)
+	}
+	err = remote.ActivateTab(tabs[0])
+	if err != nil {
+		log.Println("error switching tab: ", err)
+	}
 
 	// re-enable events when changing active tab
 	remote.AllEvents(true) // enable all events
 
-	_, _ = remote.Navigate("https://natwelch.com")
+	_, err = remote.Navigate("https://natwelch.com")
+	if err != nil {
+		log.Println("error navigating: ", err)
+	}
 
 	<-done
+
 	log.Println("Closing")
 }
