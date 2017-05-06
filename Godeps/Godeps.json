@@ -2,9 +2,6 @@
 	"ImportPath": "github.com/icco/archive.city",
 	"GoVersion": "go1.8",
 	"GodepVersion": "v79",
-	"Packages": [
-		"./..."
-	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/gobs/args",
