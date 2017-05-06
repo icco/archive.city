@@ -10,8 +10,6 @@ import (
 	"time"
 
 	"github.com/gobs/args"
-	"github.com/gobs/pretty"
-	"github.com/gobs/simplejson"
 	"github.com/raff/godet"
 )
 
@@ -72,21 +70,7 @@ func main() {
 
 	cmd := flag.String("cmd", chromeapp, "command to execute to start the browser")
 	port := flag.String("port", "localhost:9222", "Chrome remote debugger port")
-	verbose := flag.Bool("verbose", false, "verbose logging")
-	version := flag.Bool("version", false, "display remote devtools version")
-	listtabs := flag.Bool("tabs", false, "show list of open tabs")
-	seltab := flag.Int("tab", 0, "select specified tab if available")
-	newtab := flag.Bool("new", false, "always open a new tab")
-	filter := flag.String("filter", "page", "filter tab list")
-	domains := flag.Bool("domains", false, "show list of available domains")
-	requests := flag.Bool("requests", false, "show request notifications")
-	responses := flag.Bool("responses", false, "show response notifications")
-	allEvents := flag.Bool("all-events", false, "enable all events")
-	logev := flag.Bool("log", false, "show log/console messages")
-	query := flag.String("query", "", "query against current document")
-	eval := flag.String("eval", "", "evaluate expression")
-	screenshot := flag.Bool("screenshot", false, "take a screenshot")
-	control := flag.Bool("control", false, "control navigation")
+	verbose := flag.Bool("v", false, "verbose logging")
 	flag.Parse()
 
 	if *cmd != "" {
@@ -124,200 +108,57 @@ func main() {
 		log.Fatal("cannot get version: ", err)
 	}
 
-	if *version {
-		pretty.PrettyPrint(v)
-	} else {
-		log.Println("connected to", v.Browser, "protocol version", v.ProtocolVersion)
-	}
-
-	if *listtabs {
-		tabs, err := remote.TabList(*filter)
-		if err != nil {
-			log.Fatal("cannot get list of tabs: ", err)
-		}
-
-		pretty.PrettyPrint(tabs)
-	}
-
-	if *domains {
-		d, err := remote.GetDomains()
-		if err != nil {
-			log.Fatal("cannot get domains: ", err)
-		}
-
-		pretty.PrettyPrint(d)
-	}
+	log.Println("connected to", v.Browser, "protocol version", v.ProtocolVersion)
 
 	remote.CallbackEvent(godet.EventClosed, func(params godet.Params) {
 		log.Println("RemoteDebugger connection terminated.")
 		done <- true
 	})
 
-	if *requests {
-		remote.CallbackEvent("Network.requestWillBeSent", func(params godet.Params) {
-			log.Println("requestWillBeSent",
-				params["type"],
-				params["documentURL"],
-				params["request"].(map[string]interface{})["url"])
-		})
-	}
+	remote.CallbackEvent("DOM.documentUpdated", func(params godet.Params) {
+		log.Println("document updated. taking screenshot...")
+		t := time.Now()
+		remote.SaveScreenshot(fmt.Sprintf("screenshot-%s.png", t.Format("20060102150405")), 0644, 0, false)
+	})
 
-	if *responses {
-		remote.CallbackEvent("Network.responseReceived", func(params godet.Params) {
-			url := params["response"].(map[string]interface{})["url"].(string)
+	// install some callbacks
+	remote.CallbackEvent(godet.EventClosed, func(params godet.Params) {
+		fmt.Println("RemoteDebugger connection terminated.")
+	})
 
-			log.Println("responseReceived",
-				params["type"],
-				limit(url, 80))
+	remote.CallbackEvent("Network.requestWillBeSent", func(params godet.Params) {
+		fmt.Println("requestWillBeSent",
+			params["type"],
+			params["documentURL"],
+			params["request"].(map[string]interface{})["url"])
+	})
 
-			if params["type"].(string) == "Image" {
-				go func() {
-					req := params["requestId"].(string)
-					res, err := remote.GetResponseBody(req)
-					if err != nil {
-						log.Println("Error getting responseBody", err)
-					} else {
-						log.Println("ResponseBody", len(res), limit(string(res), 10))
-					}
-				}()
-			}
-		})
-	}
+	remote.CallbackEvent("Network.responseReceived", func(params godet.Params) {
+		fmt.Println("responseReceived",
+			params["type"],
+			params["response"].(map[string]interface{})["url"])
+	})
 
-	if *logev {
-		remote.CallbackEvent("Log.entryAdded", func(params godet.Params) {
-			entry := params["entry"].(map[string]interface{})
-			log.Println("LOG", entry["type"], entry["level"], entry["text"])
-		})
+	remote.CallbackEvent("Log.entryAdded", func(params godet.Params) {
+		entry := params["entry"].(map[string]interface{})
+		fmt.Println("LOG", entry["type"], entry["level"], entry["text"])
+	})
 
-		remote.CallbackEvent("Runtime.consoleAPICalled", func(params godet.Params) {
-			l := []interface{}{"CONSOLE", params["type"].(string)}
+	// enable event processing
+	remote.RuntimeEvents(true)
+	remote.NetworkEvents(true)
+	remote.PageEvents(true)
+	remote.DOMEvents(true)
+	remote.LogEvents(true)
 
-			for _, a := range params["args"].([]interface{}) {
-				arg := a.(map[string]interface{})
+	// navigate in existing tab
+	tabs, _ := remote.TabList("")
+	_ = remote.ActivateTab(tabs[0])
 
-				if arg["value"] != nil {
-					l = append(l, arg["value"])
-				} else if arg["preview"] != nil {
-					arg := arg["preview"].(map[string]interface{})
+	// re-enable events when changing active tab
+	remote.AllEvents(true) // enable all events
 
-					v := arg["description"].(string) + "{"
-
-					for i, p := range arg["properties"].([]interface{}) {
-						if i > 0 {
-							v += ", "
-						}
-
-						prop := p.(map[string]interface{})
-						if prop["name"] != nil {
-							v += fmt.Sprintf("%q: ", prop["name"])
-						}
-
-						v += fmt.Sprintf("%v", prop["value"])
-					}
-
-					v += "}"
-					l = append(l, v)
-				} else {
-					l = append(l, arg["type"].(string))
-				}
-
-			}
-
-			log.Println(l...)
-		})
-	}
-
-	if *screenshot {
-		remote.CallbackEvent("DOM.documentUpdated", func(params godet.Params) {
-			log.Println("document updated. taking screenshot...")
-			remote.SaveScreenshot("screenshot.png", 0644, 0, false)
-		})
-	}
-
-	if *control {
-		remote.SetControlNavigation(true)
-
-		remote.CallbackEvent("Page.navigationRequested", func(params godet.Params) {
-			log.Println("navigation requested for", params["url"])
-		})
-	}
-
-	if flag.NArg() > 0 {
-		p := flag.Arg(0)
-
-		tabs, err := remote.TabList("page")
-		if err != nil {
-			log.Fatal("cannot get tabs: ", err)
-		}
-
-		if len(tabs) == 0 || *newtab {
-			_, err = remote.NewTab(p)
-		} else {
-			tab := *seltab
-			if tab > len(tabs) {
-				tab = 0
-			}
-
-			if err = remote.ActivateTab(tabs[tab]); err == nil {
-				_, err = remote.Navigate(p)
-			}
-		}
-
-		if err != nil {
-			log.Fatal("error loading page: ", err)
-		}
-	}
-
-	if *allEvents {
-		remote.AllEvents(true)
-	} else {
-		remote.RuntimeEvents(true)
-		remote.NetworkEvents(true)
-		remote.PageEvents(true)
-		remote.DOMEvents(true)
-		remote.LogEvents(true)
-	}
-
-
-	if *query != "" {
-		res, err := remote.GetDocument()
-		if err != nil {
-			log.Fatal("error getting document: ", err)
-		}
-
-		if *verbose {
-			pretty.PrettyPrint(res)
-		}
-
-		doc := simplejson.AsJson(res)
-		id := doc.GetPath("root", "nodeId").MustInt(-1)
-		res, err = remote.QuerySelector(id, *query)
-		if err != nil {
-			log.Fatal("error in querySelector: ", err)
-		}
-
-		if res == nil {
-			log.Println("no result for", *query)
-		} else {
-			id = int(res["nodeId"].(float64))
-			res, err = remote.ResolveNode(id)
-			if err != nil {
-				log.Fatal("error in resolveNode: ", err)
-			}
-
-			pretty.PrettyPrint(res)
-		}
-	}
-
-	if *eval != "" {
-		res, err := remote.EvaluateWrap(*eval)
-		if err != nil {
-			log.Fatal("error in evaluate: ", err)
-		}
-
-		pretty.PrettyPrint(res)
-	}
+	_, _ = remote.Navigate("https://natwelch.com")
 
 	<-done
 	log.Println("Closing")
