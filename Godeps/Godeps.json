@@ -21,8 +21,8 @@
 		},
 		{
 			"ImportPath": "github.com/gorilla/websocket",
-			"Comment": "v1.1.0-24-g3f3e394da2b8",
-			"Rev": "3f3e394da2b801fbe732a935ef40724762a67a07"
+			"Comment": "v1.1.0-29-ga91eba7f9777",
+			"Rev": "a91eba7f97777409bc2c443f5534d41dd20c5720"
 		},
 		{
 			"ImportPath": "github.com/gxed/GoEndian",
@@ -54,7 +54,7 @@
 		},
 		{
 			"ImportPath": "github.com/raff/godet",
-			"Rev": "5a85277ab5a0c6173f5b14bba9d2fb9aaad49f12"
+			"Rev": "6ef1854e06c8b435946d13a3ef8c82bcc5afd3f2"
 		},
 		{
 			"ImportPath": "github.com/whyrusleeping/go-logging",
