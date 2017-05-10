@@ -113,7 +113,8 @@ func main() {
 	remote.CallbackEvent("DOM.documentUpdated", func(params godet.Params) {
 		log.Println("document updated. taking screenshot...")
 		t := time.Now()
-		remote.SaveScreenshot(fmt.Sprintf("screenshot-%s.png", t.Format("20060102150405")), 0644, 0, false)
+		remote.SaveScreenshot(fmt.Sprintf("screenshot-%s.png", t.Format("20060102150405")), 0644, 0, true)
+		done <- true
 	})
 
 	// install some callbacks
