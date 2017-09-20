@@ -1,11 +1,13 @@
 version: "3"
 services:
-  app:
-    build:
-      context: .
+  #app:
+  #  build:
+  #    context: .
   db:
     image: postgres:9.4
     volumes:
       - .data:/var/lib/postgresql/data
   rendertron:
     image: icco/rendertron
+    ports:
+      - 8080
